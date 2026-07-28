@@ -1,0 +1,10 @@
+interface:
+  display_name: "Content Graph Director"
+  short_description: "Generate specific, evidence-backed content without generic AI slop"
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

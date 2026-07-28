@@ -1,20 +1,24 @@
 # Content Graph Director
 
-Install it globally for Codex and Cursor with one command.
+Content Graph Director is an Agent Skill for creating specific, evidence-backed blogs, presentations, talks, workshops, scripts, and website content without generic AI language or one-size-fits-all structures.
 
-## macOS or Linux
+The user provides one prompt. The skill identifies the medium and content job, assembles the smallest useful content graph, checks evidence, drafts the actual deliverable, runs format-specific audits, and routes failures back to the stage that caused them.
+
+## Install for Codex and Cursor
+
+### macOS or Linux
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ojusave/ojus-new/main/install.sh | sh
 ```
 
-## Windows PowerShell
+### Windows PowerShell
 
 ```powershell
 irm https://raw.githubusercontent.com/ojusave/ojus-new/main/install.ps1 | iex
 ```
 
-The installer downloads the packaged skill, verifies its SHA-256 checksum, backs up any existing copy, and installs it to both agent-specific locations:
+The installer downloads this repository from GitHub, validates the skill entrypoint, backs up any existing copy, and installs the complete skill to:
 
 ```text
 ~/.agents/skills/content-graph-director
@@ -22,6 +26,20 @@ The installer downloads the packaged skill, verifies its SHA-256 checksum, backs
 ```
 
 Start a new Codex or Cursor chat after installation so the agent reloads its skill catalog.
+
+## Install with the Agent Skills CLI
+
+```bash
+npx --yes skills@latest add https://github.com/ojusave/ojus-new \
+  --skill content-graph-director \
+  --global \
+  --agent codex \
+  --agent cursor \
+  --copy \
+  --yes
+```
+
+The direct installer is the simplest option when the skill should be available to both agents. The Skills CLI is useful when you want its normal agent-detection or project-scoped flow.
 
 ## Use it
 
@@ -37,27 +55,26 @@ Cursor:
 /content-graph-director Create a 30-minute conference talk about...
 ```
 
-The skill can also be selected automatically when a request asks for a blog, presentation, talk, workshop, script, or website and calls for specific, evidence-backed writing that avoids generic AI language.
+The skill may also be selected automatically for substantial content-generation requests when the host supports implicit skill activation.
 
 ## What it does
-
-The user provides one prompt. The skill determines what is being made, what the content must accomplish, what evidence is available, and which format-specific checks must pass before it returns the finished work.
 
 ```text
 prompt
   -> request interpretation
+  -> medium and content-job selection
   -> source sufficiency check
-  -> meaning and argument design
+  -> audience and meaning design
   -> format-specific plan
-  -> first complete draft
+  -> complete first draft
   -> independent audits
   -> targeted repair
   -> final content or native artifact
 ```
 
-A failed audit does not trigger a blind rewrite. It routes the problem back to the stage that caused it. Unsupported claims return to evidence. A generic thesis returns to audience or judgment. A bad workshop exercise returns to activity mechanics. An unnatural talk returns to spoken-language editing.
+A failed audit does not trigger a blind rewrite. Unsupported claims return to evidence. A generic thesis returns to audience or judgment. A bad workshop exercise returns to activity mechanics. An unnatural talk returns to spoken-language editing.
 
-## Supported formats
+## Supported work
 
 - Blogs, articles, essays, tutorials, case studies, and launch posts
 - Presentations, slide narratives, and speaker notes
@@ -66,39 +83,19 @@ A failed audit does not trigger a blind rewrite. It routes the problem back to t
 - Talking-head, webinar, demo, voiceover, and teleprompter scripts
 - Homepages, landing pages, product pages, campaign pages, and event pages
 
-The skill also separates the format from the content job. A presentation may teach, persuade, announce, compare, facilitate, or change a belief. Different jobs receive different structures and pass conditions.
+The skill separates the **medium** from the **content job**. A presentation may teach, persuade, announce, compare, facilitate, or change a belief. Each combination receives different structures and pass conditions.
 
 ## Core guardrails
 
 - Never invent facts, quotations, metrics, customer stories, personal experiences, or outcomes.
 - Keep confidence proportional to the available evidence.
-- Use visible placeholders when a required fact is missing.
+- Use visible placeholders when a required private fact is missing.
 - Build the argument, learning sequence, visitor journey, or activity mechanics before drafting.
 - Apply rules specific to the requested medium.
 - Audit factuality, audience fit, format integrity, usefulness, voice, constraints, and generic AI language separately.
 - Repair the responsible stage instead of polishing the symptom.
 - Stop after at most two targeted revision rounds.
-- Return the requested content rather than replacing it with process commentary.
-
-## Alternative installation with the Agent Skills CLI
-
-The repository also follows the open Agent Skills layout:
-
-```bash
-npx --yes skills@latest add https://github.com/ojusave/ojus-new \
-  --skill content-graph-director \
-  --global \
-  --agent codex \
-  --agent cursor \
-  --copy \
-  --yes
-```
-
-The direct installer above is the recommended route because it explicitly writes both agent-specific global directories.
-
-## Install the ChatGPT ZIP
-
-The standalone ChatGPT package is available at [`dist/skill.zip`](dist/skill.zip).
+- Return the requested content instead of replacing it with process commentary.
 
 ## Example prompts
 
@@ -122,8 +119,8 @@ facilitation plan, activity instructions, timing, and speaker script.
 
 ```text
 Write a homepage for an infrastructure product. Determine the visitor's likely
-questions before choosing sections, and do not add sections just because SaaS
-homepages usually contain them.
+questions before choosing sections, and do not add sections merely because
+SaaS homepages usually contain them.
 ```
 
 ## Mechanical lint
@@ -137,7 +134,11 @@ python skills/content-graph-director/scripts/content_lint.py draft.txt \
   --strict
 ```
 
-The linter produces signals, not a universal human-writing score. A clean result does not prove that the content is good. The argument, evidence, judgment, and format still matter.
+It produces warning signals, not a universal human-writing score. A clean result does not prove the content is good. The argument, evidence, judgment, and format still matter.
+
+## Update
+
+Rerun the installation command. The installer moves the previous installation to a timestamped backup before activating the new copy.
 
 ## Repository layout
 
@@ -147,9 +148,6 @@ The linter produces signals, not a universal human-writing score. A clean result
 ├── install.sh
 ├── install.ps1
 ├── install-command.txt
-├── SHA256SUMS
-├── dist/
-│   └── skill.zip
 └── skills/
     └── content-graph-director/
         ├── INSTALL.md
@@ -161,12 +159,4 @@ The linter produces signals, not a universal human-writing score. A clean result
             ├── content_lint.py
             ├── install.sh
             └── install.ps1
-```
-
-## Development checks
-
-```bash
-unzip -t dist/skill.zip
-python /home/oai/skills/skill-creator/scripts/quick_validate.py skills/content-graph-director
-python skills/content-graph-director/scripts/content_lint.py --help
 ```
