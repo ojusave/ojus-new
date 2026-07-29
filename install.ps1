@@ -1,5 +1,10 @@
 [CmdletBinding()]
-param()
+param(
+    [ValidateSet("all", "codex", "cursor")]
+    [string]$Target = "all",
+
+    [string]$ProjectRoot
+)
 
 $ErrorActionPreference = "Stop"
 $SkillName = "content-graph-director"
@@ -32,9 +37,18 @@ try {
     }
 
     $SkillRoot = $SkillFile.Directory.FullName
-    $Installer = Join-Path $SkillRoot "scripts/install.ps1"
-    if (-not (Test-Path -LiteralPath $Installer -PathType Leaf)) {
-        throw "The downloaded skill does not contain its installer."
+    $RequiredFiles = @(
+        "SKILL.md",
+        "references/core-graph.md",
+        "references/operations-and-delivery.md",
+        "references/regression-scenarios.md",
+        "scripts/install.ps1",
+        "scripts/validate_content_graph.py"
+    )
+    foreach ($RequiredFile in $RequiredFiles) {
+        if (-not (Test-Path -LiteralPath (Join-Path $SkillRoot $RequiredFile) -PathType Leaf)) {
+            throw "The downloaded skill is missing $RequiredFile."
+        }
     }
 
     $SkillText = Get-Content -LiteralPath $SkillFile.FullName -Raw
@@ -42,7 +56,13 @@ try {
         throw "The downloaded SKILL.md failed validation."
     }
 
-    & $Installer -Target all
+    $Installer = Join-Path $SkillRoot "scripts/install.ps1"
+    if ($ProjectRoot) {
+        & $Installer -Target $Target -ProjectRoot $ProjectRoot
+    }
+    else {
+        & $Installer -Target $Target
+    }
 }
 finally {
     Remove-Item -LiteralPath $WorkDir -Recurse -Force -ErrorAction SilentlyContinue

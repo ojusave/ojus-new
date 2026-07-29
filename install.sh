@@ -47,8 +47,19 @@ fi
 SKILL_FILE=$(find "$EXTRACT_DIR" -type f -path "*/skills/$SKILL_NAME/SKILL.md" -print | head -n 1)
 [ -n "$SKILL_FILE" ] || fail "the repository archive does not contain skills/$SKILL_NAME/SKILL.md"
 SKILL_ROOT=${SKILL_FILE%/SKILL.md}
-[ -f "$SKILL_ROOT/scripts/install.sh" ] || fail "the downloaded skill does not contain its installer"
+
+for required in \
+  "SKILL.md" \
+  "references/core-graph.md" \
+  "references/operations-and-delivery.md" \
+  "references/regression-scenarios.md" \
+  "scripts/install.sh" \
+  "scripts/validate_content_graph.py"
+do
+  [ -f "$SKILL_ROOT/$required" ] || fail "the downloaded skill is missing $required"
+done
+
 grep -Eq '^name:[[:space:]]*content-graph-director[[:space:]]*$' "$SKILL_FILE" \
   || fail "the downloaded SKILL.md failed validation"
 
-sh "$SKILL_ROOT/scripts/install.sh" --all --user
+sh "$SKILL_ROOT/scripts/install.sh" "$@"

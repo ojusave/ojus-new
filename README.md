@@ -1,24 +1,20 @@
 # Content Graph Director
 
-Content Graph Director is an Agent Skill for creating specific, evidence-backed blogs, presentations, talks, workshops, scripts, and website content without generic AI language or one-size-fits-all structures.
+Install the skill globally for Codex and Cursor.
 
-The user provides one prompt. The skill identifies the medium and content job, assembles the smallest useful content graph, checks evidence, drafts the actual deliverable, runs format-specific audits, and routes failures back to the stage that caused them.
-
-## Install for Codex and Cursor
-
-### macOS or Linux
+## macOS or Linux
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ojusave/ojus-new/main/install.sh | sh
 ```
 
-### Windows PowerShell
+## Windows PowerShell
 
 ```powershell
 irm https://raw.githubusercontent.com/ojusave/ojus-new/main/install.ps1 | iex
 ```
 
-The installer downloads this repository from GitHub, validates the skill entrypoint, backs up any existing copy, and installs the complete skill to:
+The installer downloads the repository archive from GitHub, validates the complete skill, backs up any existing copy, and installs it to:
 
 ```text
 ~/.agents/skills/content-graph-director
@@ -26,20 +22,6 @@ The installer downloads this repository from GitHub, validates the skill entrypo
 ```
 
 Start a new Codex or Cursor chat after installation so the agent reloads its skill catalog.
-
-## Install with the Agent Skills CLI
-
-```bash
-npx --yes skills@latest add https://github.com/ojusave/ojus-new \
-  --skill content-graph-director \
-  --global \
-  --agent codex \
-  --agent cursor \
-  --copy \
-  --yes
-```
-
-The direct installer is the simplest option when the skill should be available to both agents. The Skills CLI is useful when you want its normal agent-detection or project-scoped flow.
 
 ## Use it
 
@@ -55,24 +37,55 @@ Cursor:
 /content-graph-director Create a 30-minute conference talk about...
 ```
 
-The skill may also be selected automatically for substantial content-generation requests when the host supports implicit skill activation.
+The skill may also activate automatically for substantial requests involving blogs, presentations, talks, workshops, scripts, or website content.
 
-## What it does
+## What changed in this upgrade
+
+The original skill controlled content quality but did not model what happened after the draft. This version treats four dimensions as first-class state:
 
 ```text
-prompt
-  -> request interpretation
-  -> medium and content-job selection
-  -> source sufficiency check
-  -> audience and meaning design
-  -> format-specific plan
-  -> complete first draft
-  -> independent audits
-  -> targeted repair
-  -> final content or native artifact
+medium x content job x requested operation x next use
 ```
 
-A failed audit does not trigger a blind rewrite. Unsupported claims return to evidence. A generic thesis returns to audience or judgment. A bad workshop exercise returns to activity mechanics. An unnatural talk returns to spoken-language editing.
+The requested operation can be:
+
+```text
+create
+critique
+revise
+adapt
+package
+publish
+install
+verify
+```
+
+That distinction prevents several common failures:
+
+- A critique request no longer triggers a silent rewrite.
+- A targeted revision preserves the parts the user said already work.
+- A later instruction such as `all I need is one command` resets the active graph instead of dragging obsolete artifacts forward.
+- A valid package is not mislabeled as published or installed.
+- A local commit is not called a GitHub push.
+- The final response puts the user's next action before build history and process notes.
+
+## How the graph works
+
+```text
+current request
+  -> medium, content-job, operation, and next-use classification
+  -> graph-reset check
+  -> evidence and audience model
+  -> meaning and format plan
+  -> create, critique, revise, adapt, or delivery branch
+  -> independent content and process audits
+  -> targeted repair
+  -> package, publication, or installation handoff when needed
+  -> completion-stage verification
+  -> result-first response
+```
+
+A failed audit does not trigger a blind rewrite. Unsupported claims return to evidence. A generic thesis returns to audience or judgment. An unworkable workshop exercise returns to activity mechanics. A false publication claim returns to remote verification.
 
 ## Supported work
 
@@ -82,50 +95,72 @@ A failed audit does not trigger a blind rewrite. Unsupported claims return to ev
 - Workshops, exercises, and facilitated sessions
 - Talking-head, webinar, demo, voiceover, and teleprompter scripts
 - Homepages, landing pages, product pages, campaign pages, and event pages
-
-The skill separates the **medium** from the **content job**. A presentation may teach, persuade, announce, compare, facilitate, or change a belief. Each combination receives different structures and pass conditions.
+- Critique, revision, and adaptation of existing content
+- Content handoffs for native artifact generation, publication, and installation
 
 ## Core guardrails
 
 - Never invent facts, quotations, metrics, customer stories, personal experiences, or outcomes.
-- Keep confidence proportional to the available evidence.
-- Use visible placeholders when a required private fact is missing.
+- Keep confidence proportional to the evidence.
 - Build the argument, learning sequence, visitor journey, or activity mechanics before drafting.
-- Apply rules specific to the requested medium.
-- Audit factuality, audience fit, format integrity, usefulness, voice, constraints, and generic AI language separately.
-- Repair the responsible stage instead of polishing the symptom.
-- Stop after at most two targeted revision rounds.
-- Return the requested content instead of replacing it with process commentary.
+- Apply rules specific to the requested medium and content job.
+- Preserve what the user explicitly says already works.
+- Treat the latest narrowing or correction as authoritative.
+- Audit content slop and process slop separately.
+- Keep one canonical editable source and treat packages or exports as derived artifacts.
+- Verify the completion stage the user requested.
+- Return one primary result or next action before process detail.
 
-## Example prompts
-
-```text
-Create a 30-minute conference talk arguing that request rate is no longer
-enough to reason about capacity for agentic systems. Use only claims we can
-support, and write the actual spoken script with slide beats.
-```
+## Completion stages
 
 ```text
-Turn these product notes and metrics into a launch article for experienced
-backend engineers. Research anything current that materially affects the
-claims. Do not invent customer evidence.
+content_ready
+artifact_ready
+packaged
+published
+installed
+user_path_verified
 ```
 
-```text
-Design a 55-minute workshop for DevRel practitioners in theater seating.
-Attendees have phones but no desks or laptops. Produce the complete
-facilitation plan, activity instructions, timing, and speaker script.
+Each stage requires new evidence. The skill rejects convenient substitutions such as treating a valid ZIP as proof that a public installation command works.
+
+## Alternative installation with the Agent Skills CLI
+
+```bash
+npx --yes skills@latest add https://github.com/ojusave/ojus-new \
+  --skill content-graph-director \
+  --global \
+  --agent codex \
+  --agent cursor \
+  --copy \
+  --yes
 ```
 
-```text
-Write a homepage for an infrastructure product. Determine the visitor's likely
-questions before choosing sections, and do not add sections merely because
-SaaS homepages usually contain them.
+The direct installer is the default when the skill should be copied into both agent-specific global directories.
+
+## Install a project-scoped copy
+
+The public installer accepts the same project arguments as the bundled installer:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ojusave/ojus-new/main/install.sh | \
+  sh -s -- --all --project "$PWD"
 ```
+
+PowerShell:
+
+```powershell
+$script = irm https://raw.githubusercontent.com/ojusave/ojus-new/main/install.ps1
+& ([scriptblock]::Create($script)) -Target all -ProjectRoot (Get-Location)
+```
+
+## Update
+
+Rerun the installation command. The installer moves the previous copy to a timestamped backup before activating the new version.
 
 ## Mechanical lint
 
-The included linter catches mechanical warning signs such as repeated sentence openings, banned phrase patterns, unresolved placeholders, excessive buzzwords, em dashes, long spoken sentences, and timing problems.
+The included linter catches mechanical signals such as repeated sentence openings, banned phrase patterns, unresolved placeholders, buzzword density, em dashes, long spoken sentences, and timing problems.
 
 ```bash
 python skills/content-graph-director/scripts/content_lint.py draft.txt \
@@ -134,16 +169,30 @@ python skills/content-graph-director/scripts/content_lint.py draft.txt \
   --strict
 ```
 
-It produces warning signals, not a universal human-writing score. A clean result does not prove the content is good. The argument, evidence, judgment, and format still matter.
+It does not assign a universal human-writing score. Argument, evidence, judgment, format, and delivery still require review.
 
-## Update
+## Maintainer validation
 
-Rerun the installation command. The installer moves the previous installation to a timestamped backup before activating the new copy.
+```bash
+python skills/content-graph-director/scripts/validate_content_graph.py \
+  skills/content-graph-director
+
+python /home/oai/skills/skill-creator/scripts/quick_validate.py \
+  skills/content-graph-director
+
+python /home/oai/skills/skill-creator/scripts/package_skill.py \
+  skills/content-graph-director /tmp/content-graph-director-dist
+
+unzip -t /tmp/content-graph-director-dist/skill.zip
+```
+
+The repository CI validates the source archive and tests clean installation plus safe reinstallation on Linux and Windows.
 
 ## Repository layout
 
 ```text
 .
+├── .github/workflows/validate.yml
 ├── README.md
 ├── install.sh
 ├── install.ps1
@@ -153,10 +202,12 @@ Rerun the installation command. The installer moves the previous installation to
         ├── INSTALL.md
         ├── SKILL.md
         ├── agents/
-        │   └── openai.yaml
         ├── references/
+        │   ├── operations-and-delivery.md
+        │   └── regression-scenarios.md
         └── scripts/
             ├── content_lint.py
             ├── install.sh
-            └── install.ps1
+            ├── install.ps1
+            └── validate_content_graph.py
 ```

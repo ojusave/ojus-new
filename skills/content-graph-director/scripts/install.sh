@@ -106,10 +106,19 @@ install_copy() {
   rm -rf "$temp"
   cp -R "$SKILL_ROOT" "$temp"
 
-  [ -f "$temp/SKILL.md" ] || {
-    rm -rf "$temp"
-    fail "copy verification failed for $label"
-  }
+  for required in \
+    "SKILL.md" \
+    "references/core-graph.md" \
+    "references/operations-and-delivery.md" \
+    "references/regression-scenarios.md" \
+    "scripts/content_lint.py" \
+    "scripts/validate_content_graph.py"
+  do
+    [ -f "$temp/$required" ] || {
+      rm -rf "$temp"
+      fail "copy verification failed for $label: missing $required"
+    }
+  done
 
   if [ -e "$target" ] || [ -L "$target" ]; then
     backup="${target}.backup-${TIMESTAMP}"
@@ -128,6 +137,7 @@ install_copy() {
   fi
 
   chmod u+x "$target/scripts/content_lint.py" 2>/dev/null || true
+  chmod u+x "$target/scripts/validate_content_graph.py" 2>/dev/null || true
   chmod u+x "$target/scripts/install.sh" 2>/dev/null || true
 
   grep -Eq '^name:[[:space:]]*content-graph-director[[:space:]]*$' "$target/SKILL.md" \

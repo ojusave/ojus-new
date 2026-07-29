@@ -1,6 +1,6 @@
 interface:
   display_name: "Content Graph Director"
-  short_description: "Generate specific, evidence-backed content without generic AI slop"
+  short_description: "Create, critique, revise, and deliver evidence-backed content without AI slop"
 policy:
   products:
   - chatgpt

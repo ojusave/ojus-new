@@ -15,11 +15,7 @@ gh auth status >/dev/null 2>&1 || fail "authenticate first with: gh auth login"
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 || fail "run this from the repository checkout"
 [ -z "$(git status --porcelain)" ] || fail "commit or discard local changes before publishing"
 
-if ! gh repo view "$REPOSITORY" >/dev/null 2>&1; then
-  gh repo create "$REPOSITORY" \
-    --public \
-    --description "Evidence-backed content generation through adaptive content graphs and format-specific anti-slop audits."
-fi
+gh repo view "$REPOSITORY" >/dev/null 2>&1 || fail "repository is not accessible: $REPOSITORY"
 
 if git remote get-url origin >/dev/null 2>&1; then
   git remote set-url origin "$REMOTE_URL"

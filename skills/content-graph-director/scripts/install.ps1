@@ -62,10 +62,20 @@ function Install-SkillCopy {
     }
 
     Copy-Item -LiteralPath $SkillRoot -Destination $Temporary -Recurse -Force
-    $CopiedSkillFile = Join-Path $Temporary "SKILL.md"
-    if (-not (Test-Path -LiteralPath $CopiedSkillFile -PathType Leaf)) {
-        Remove-Item -LiteralPath $Temporary -Recurse -Force -ErrorAction SilentlyContinue
-        throw "Copy verification failed for $Label."
+    $RequiredFiles = @(
+        "SKILL.md",
+        "references/core-graph.md",
+        "references/operations-and-delivery.md",
+        "references/regression-scenarios.md",
+        "scripts/content_lint.py",
+        "scripts/validate_content_graph.py"
+    )
+    foreach ($RequiredFile in $RequiredFiles) {
+        $RequiredPath = Join-Path $Temporary $RequiredFile
+        if (-not (Test-Path -LiteralPath $RequiredPath -PathType Leaf)) {
+            Remove-Item -LiteralPath $Temporary -Recurse -Force -ErrorAction SilentlyContinue
+            throw "Copy verification failed for ${Label}: missing $RequiredFile."
+        }
     }
 
     $Backup = $null

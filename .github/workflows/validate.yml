@@ -1,0 +1,133 @@
+name: Validate Content Graph Director
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    name: Validate and install on Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate skill contracts
+        run: |
+          python skills/content-graph-director/scripts/validate_content_graph.py \
+            skills/content-graph-director
+          python skills/content-graph-director/scripts/content_lint.py --help
+
+      - name: Exercise the public installer path twice
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/ojus-new-main.zip"
+          git archive --format=zip --prefix=ojus-new-main/ HEAD -o "$archive"
+
+          serve_dir="$(mktemp -d)"
+          cp "$archive" "$serve_dir/repository.zip"
+          python -m http.server 8123 --bind 127.0.0.1 \
+            --directory "$serve_dir" >"$RUNNER_TEMP/cgd-http.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          sleep 2
+
+          test_root="$(mktemp -d)"
+          export CONTENT_GRAPH_DIRECTOR_ARCHIVE_URL="http://127.0.0.1:8123/repository.zip"
+
+          sh install.sh --all --project "$test_root"
+          test -f "$test_root/.agents/skills/content-graph-director/SKILL.md"
+          test -f "$test_root/.cursor/skills/content-graph-director/SKILL.md"
+          python "$test_root/.agents/skills/content-graph-director/scripts/validate_content_graph.py" \
+            "$test_root/.agents/skills/content-graph-director"
+
+          sh install.sh --all --project "$test_root"
+          find "$test_root/.agents/skills" -maxdepth 1 -type d \
+            -name 'content-graph-director.backup-*' | grep -q .
+          find "$test_root/.cursor/skills" -maxdepth 1 -type d \
+            -name 'content-graph-director.backup-*' | grep -q .
+
+  windows:
+    name: Validate and install on Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate skill contracts
+        shell: pwsh
+        run: |
+          python skills/content-graph-director/scripts/validate_content_graph.py `
+            skills/content-graph-director
+          python skills/content-graph-director/scripts/content_lint.py --help
+
+      - name: Exercise the PowerShell installer path twice
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $archive = Join-Path $env:RUNNER_TEMP "ojus-new-main.zip"
+          git archive --format=zip --prefix=ojus-new-main/ HEAD -o $archive
+
+          $serveDir = Join-Path $env:RUNNER_TEMP "content-graph-director-http"
+          New-Item -ItemType Directory -Path $serveDir -Force | Out-Null
+          Copy-Item -LiteralPath $archive -Destination (Join-Path $serveDir "repository.zip")
+
+          $server = Start-Process python `
+            -ArgumentList "-m", "http.server", "8123", "--bind", "127.0.0.1", "--directory", $serveDir `
+            -PassThru -NoNewWindow
+
+          try {
+              Start-Sleep -Seconds 2
+              $env:CONTENT_GRAPH_DIRECTOR_ARCHIVE_URL = "http://127.0.0.1:8123/repository.zip"
+              $testRoot = Join-Path $env:RUNNER_TEMP "content-graph-director-install"
+              New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
+
+              .\install.ps1 -Target all -ProjectRoot $testRoot
+
+              $codexSkill = Join-Path $testRoot ".agents/skills/content-graph-director/SKILL.md"
+              $cursorSkill = Join-Path $testRoot ".cursor/skills/content-graph-director/SKILL.md"
+              if (-not (Test-Path -LiteralPath $codexSkill -PathType Leaf)) {
+                  throw "Codex installation was not created."
+              }
+              if (-not (Test-Path -LiteralPath $cursorSkill -PathType Leaf)) {
+                  throw "Cursor installation was not created."
+              }
+
+              python `
+                (Join-Path $testRoot ".agents/skills/content-graph-director/scripts/validate_content_graph.py") `
+                (Join-Path $testRoot ".agents/skills/content-graph-director")
+
+              .\install.ps1 -Target all -ProjectRoot $testRoot
+
+              $codexBackups = Get-ChildItem `
+                (Join-Path $testRoot ".agents/skills") `
+                -Directory -Filter "content-graph-director.backup-*"
+              $cursorBackups = Get-ChildItem `
+                (Join-Path $testRoot ".cursor/skills") `
+                -Directory -Filter "content-graph-director.backup-*"
+
+              if (-not $codexBackups) {
+                  throw "Codex reinstall did not create a backup."
+              }
+              if (-not $cursorBackups) {
+                  throw "Cursor reinstall did not create a backup."
+              }
+          }
+          finally {
+              Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue
+          }
